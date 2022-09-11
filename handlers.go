@@ -12,6 +12,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
+)
+
+var (
+	TimeoutError = errors.New("Timeout Error")
 )
 
 const (
@@ -83,7 +88,14 @@ func sendPing(host string) (*MumblePing, error) {
 		return nil, err
 	}
 	readBuffer := make([]byte, MAX_UDP_PACKET_SIZE)
+	err = conn.SetReadDeadline(time.Now().Add(3*time.Second))
+	if err != nil {
+		return nil, err
+	}
 	readBytes, _, err := conn.ReadFromUDP(readBuffer)
+	if e, ok := err.(net.Error); ok && e.Timeout() {
+		return nil, TimeoutError
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +144,17 @@ func HandleMetrics(w http.ResponseWriter, r *http.Request) {
 	hostValidated, err := validateHost(hostInput)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v", err) , http.StatusBadRequest)
+		return
 	}
 	result, err := sendPing(hostValidated)
 	if err != nil {
+		if err == TimeoutError {
+			log.Warn().Msgf("Connection to %s timed out", hostValidated)
+			http.Error(w, "Could not reach remote server", http.StatusGatewayTimeout)
+			return
+		}
 		http.Error(w, fmt.Sprintf("%v", err) , http.StatusBadRequest)
+		return
 	}
 	registry := prometheus.NewRegistry()
 	AddMetricsToRegistry(result, hostValidated, registry)
