@@ -157,7 +157,12 @@ func HandleMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	registry := prometheus.NewRegistry()
-	AddMetricsToRegistry(result, hostValidated, registry)
+	err = AddMetricsToRegistry(result, hostValidated, registry)
+	if err != nil {
+		log.Error().Msgf("Error during registry creation: %v", err)
+		http.Error(w, "ServerError", http.StatusInternalServerError)
+		return
+	}
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 }
