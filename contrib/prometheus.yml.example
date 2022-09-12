@@ -1,0 +1,9 @@
+scrape_config
+ - job_name: 'mumble'
+    scrape_interval: 120s
+    scheme: http
+    params:
+      host: ['mumble:64738']
+    static_configs:
+      - targets:
+        - 'localhost:8778'
