@@ -16,16 +16,22 @@
       in
         f pkgs);
   in {
-    inherit overlay;
+    overlays.default = overlay;
 
     packages = forAllPkgs (pkgs: {
-      inherit (pkgs) mumble_exporter;
+      default = pkgs.mumble_exporter;
     });
 
-    defaultPackage = forAllSystems (system: self.packages.${system}.mumble_exporter);
-    devShell = forAllPkgs (pkgs:
-      pkgs.mkShell {
+    devShells = forAllPkgs (pkgs: {
+      default = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [ bashInteractive go ];
-      });
+      };
+    });
+
+    nixosModules.default = import ./nixos-module.nix;
+
+    checks = forAllPkgs (pkgs: {
+      nixos-test = pkgs.callPackage ./nixos-test.nix {};
+    });
   };
 }

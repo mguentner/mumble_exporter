@@ -3,7 +3,7 @@ buildGoModule rec {
   pname = "mumble_exporter";
   version = "1.0.0";
 
-  src = ./.;
+  src = lib.cleanSource ./.;
 
   vendorSha256 = "sha256-BlVNkGrDCR/nMS9uCrVfjlhtK1yApfYvBF74q/NdtXo";
   proxyVendor = true;
