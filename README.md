@@ -8,7 +8,7 @@ The exporter expects a single HTTP parameter named `host` that must include a po
 
 You can test if your the exporter works correctly with
 ```bash
-curl localhost:8778?host=mumble.example.com:63748
+curl "localhost:8778/metrics?host=mumble.example.com:63748"
 ```
 
 Prometheus job example
